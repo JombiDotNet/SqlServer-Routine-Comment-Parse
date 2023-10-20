@@ -103,6 +103,9 @@ BEGIN
         END
         ELSE SET @line_has_date = 0
 
+        IF @line_has_tag = 1 AND @line_has_date = 0
+          SET @line_date = NULL
+
         INSERT INTO @results
         (attribute_tag, attribute_value, attribute_date)
         VALUES
