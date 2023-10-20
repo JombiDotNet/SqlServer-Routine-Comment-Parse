@@ -16,26 +16,41 @@ When a new programmability object is created in Microsoft SQL Server, it adds co
 -- =============================================
 ```
 
-- Author
-- Create date
-- Description
+## Assumptions
 
-## Expanded Comments
+The parser assumes the attribute section starts and ends with a comment signifier (--) and at least one equal sign.
 
-Several other tags have been implemented because that is what I use.
+TODO: Add check if comment has an open, but not a close. Might check for CREATE, ALTER? Or use a `LEN(@text) - LEN(REPLACE(@text, '-- =', ''))` to see if there is more than one row.
 
-```sql
--- =============================================
--- Author:    <same>
--- Create date: <same>
--- Description: <same>
--- <Additional_Description>
--- Revisions: <Revision 1 Date> - <Revision 1 Note>
---                              - <Additional Revision 1 Note>
---            ...
---            <Revision N Date> - <Revision N Note>
--- TODO: <TODO Item 1>
---       <TODO Item N>
--- =============================================
-```
+## Generalized comments
 
+After the initial release and more testing, it made sense to generalize instead of assuming Jim from five years ago followed the same tagging conventions.
+
+### New tagging model
+
+Line Structure | Description | Example
+-- | --
+\<Tag\>: \<Text\> | Simple Key/Value | Author or Description
+\<Tag\>: \<Date\> | Simple Key/Value | Create date
+-\<Text\> | (dash prefix) Additional note related to previous tag | Revision
+\<Text\> | Additional note related to previous tag | Note or URL
+
+### Things to check for
+
+Rule | Handles
+-- | --
+Any semi-colon after the first semi-colon or a dash should be treated as part of text | "BUG FIX:" note in revision
+A semi-colon must be followed by a space (or tab) | URLs
+
+## Next Steps
+
+- Create a function to find routine details such as
+  - Lines of code
+  - Number of comments (be sure to handle multi-line /\* \*/)
+  - Number of blank lines
+  - Contains updates, delete, insert of non-temporary tables (procedures)
+  - Combines tabs and spaces
+
+## Credits
+
+Pinal Dave - [Enhanced TRIM() Function](https://blog.sqlauthority.com/2008/10/10/sql-server-2008-enhenced-trim-function-remove-trailing-spaces-leading-spaces-white-space-tabs-carriage-returns-line-feeds/)

@@ -1,3 +1,6 @@
+USE PRISMDB
+GO
+
 SET ANSI_NULLS ON
 GO
 
@@ -5,28 +8,32 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- =============================================
--- Author:		  Jim Richards
--- Create date: 5/1/2020
--- Description:	Remove trailing white space, tabs, carriage returns, line feeds.
+-- Author:		    Jim Richards
+-- Create date:   5/1/2020
+-- Description:	  Remove trailing white space, tabs, carriage returns, line feeds.
 -- https://blog.sqlauthority.com/2008/10/10/sql-server-2008-enhenced-trim-function-remove-trailing-spaces-leading-spaces-white-space-tabs-carriage-returns-line-feeds/
 -- Revisions:     5/1/2020    - First revision
 --                4/18/2022   - If NULL or Empty String, return NULL.
+--                10/20/2023  - Simplified by not calling LTrimX with a double reverse.
+--                            - Old: One LIKE, two REVERSE, and a PATINDEX
+--                            - New: One REVERSE, and one PATINDEX
 -- =============================================
 CREATE OR ALTER FUNCTION [dbo].[RTrimX]
 (
-  @character_expression nvarchar(4000)
+  @text nvarchar(MAX)
 )
-RETURNS nvarchar(4000)
+RETURNS nvarchar(MAX)
 AS
 BEGIN
-  
-  IF ISNULL(@character_expression, '') = ''
-    RETURN NULL
-  
-  DECLARE @trimchars VARCHAR(10)
-  SET @trimchars = CHAR(9)+CHAR(10)+CHAR(13)+CHAR(32)
-  IF @character_expression LIKE '%[' + @trimchars + ']'
-    SET @character_expression = REVERSE(dbo.pfLTrimX(REVERSE(@character_expression)))
-  RETURN @character_expression
+  DECLARE @trim_chars varchar(10)
+    , @trim_pos int
+
+  SET @trim_chars = CHAR(9)+CHAR(10)+CHAR(13)+CHAR(32)
+
+  -- Find the first non-trim character
+  SET @trim_pos = PATINDEX('%[^ ' + @trim_chars + ']%', REVERSE(@text))
+
+  IF @trim_pos = 0 RETURN @text
+  RETURN SUBSTRING(@text, 1, LEN(@text) - @trim_pos + 1)
 END
 GO
